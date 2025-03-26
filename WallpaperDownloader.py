@@ -68,7 +68,7 @@ def open_wallpaper_folder(e):  # Accept the event argument
     if wallpaper_path:
         subprocess.Popen(['explorer', wallpaper_path])
     else:
-        printlog(page, "Error: Unable to find the Wallpaper Engine projects folder.")
+        printlog("Error: Unable to find the Wallpaper Engine projects folder.")
 
 def main(page: ft.Page):
     global save_location, output
