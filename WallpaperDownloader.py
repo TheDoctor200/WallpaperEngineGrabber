@@ -79,7 +79,8 @@ def main(page: ft.Page):
     page.title = "Wallpaper Engine Workshop Downloader"
     page.window_width = 600
     page.window_height = 600
-    
+    page.window_icon = "./assets/favicon.ico"
+
     # Create a scrollable output field to display log messages
     output = ft.Column(scroll=ft.ScrollMode.ALWAYS, height=300)  # Make the log area bigger
     username = ft.Dropdown(options=[ft.dropdown.Option(account) for account in accounts], value=list(accounts.keys())[0])
