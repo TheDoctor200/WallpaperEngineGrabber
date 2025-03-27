@@ -62,6 +62,9 @@ def printlog(page, text):
         output.controls.pop(0)
     page.update()  # Ensure the UI updates to reflect changes
 
+def open_SteamWorkshop(e):
+    subprocess.Popen(['explorer', 'https://steamcommunity.com/app/431960/workshop/'])
+  
 def open_wallpaper_folder(e):  # Accept the event argument
     """Open the Wallpaper Engine 'myprojects' folder in the file explorer."""
     wallpaper_path = get_default_wallpaper_path()
@@ -138,10 +141,10 @@ def main(page: ft.Page):
 
     run_button = ft.ElevatedButton(text="Download", icon= ft.Icons.FILE_DOWNLOAD_OUTLINED, on_click=start_thread)
     select_button = ft.ElevatedButton(text="Select Save Location", icon= ft.Icons.MY_LOCATION, on_click=select_save_location)
-    manage_button = ft.ElevatedButton(text="Manage Wallpapers", icon= ft.Icons.LIBRARY_BOOKS_SHARP, on_click=open_wallpaper_folder)  # Added Manage Wallpapers Button
+    manage_button = ft.ElevatedButton(text="Manage Downloaded Wallpapers", icon= ft.Icons.LIBRARY_BOOKS_SHARP, on_click=open_wallpaper_folder)  # Added Manage Wallpapers Button
+    search_button = ft.ElevatedButton(text="Search for Wallpapers (SteamWorkshop)", icon= ft.Icons.LIBRARY_BOOKS_SHARP, on_click=open_SteamWorkshop)
 
-    # Placing the buttons side by side
-    buttons_row = ft.Row([run_button, manage_button])
+    buttons_row = ft.Row([run_button, manage_button, search_button])
 
     # Add the stack layout for overlapping text
     # center_text = ft.Text("Made by The Doctor", size=30, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE)  # Fixed color
