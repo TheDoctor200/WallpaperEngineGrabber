@@ -15,7 +15,7 @@ WallpaperEngineGrabber is a tool designed to help you download and manage wallpa
 3. Enjoy your favorite wallpapers!
 
 ## Note
-Original project by [Oureveryday](https://github.com/oureveryday/WallpaperEngineWorkshopDownloader). This project is inspired by and builds upon their work.
+Original project by [Oureveryday](https://github.com/oureveryday/WallpaperEngineWorkshopDownloader). This project is inspired by and builds upon his work.
 
 ## License
 This project is licensed under the terms of the MIT License.
