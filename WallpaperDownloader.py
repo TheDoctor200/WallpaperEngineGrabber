@@ -143,24 +143,25 @@ def main(page: ft.Page):
     # Placing the buttons side by side
     buttons_row = ft.Row([run_button, manage_button])
 
+    # Add the buttons and other elements
     page.add(
-        ft.Text("Wallpaper Engine Workshop Downloader", size=20, weight=ft.FontWeight.BOLD),
-        ft.Row([ft.Text("Select Account:"), username]),
-        select_button, save_location_text,
-        ft.Text("Enter workshop items (one per line):"), link_input,
-        buttons_row,  # Add the buttons side by side
-        ft.Text("Console Output:"), output
+    ft.Text("Wallpaper Engine Workshop Downloader", size=20, weight=ft.FontWeight.BOLD),
+    ft.Row([ft.Text("Select Account:"), username]),
+    select_button, save_location_text,
+    ft.Text("Enter workshop items (one per line):"), link_input,
+    buttons_row,  # Add the buttons side by side
+        ft.Container(
+            content=ft.Text(
+                "Made by TheDoctor",
+                color=ft.colors.WHITE,
+                weight=ft.FontWeight.BOLD,
+                size=16,
+            ),
+            margin=ft.margin.only(top=20),  # Add some space from the content above
+            padding=ft.padding.only(right=20, bottom=10),
+            alignment=ft.alignment.center_right,
+            expand=True,  # Allow container to expand
+        ),
     )
-
+    
 ft.app(target=main)
-
-
-
-
-
-
-
-
-
-
-
