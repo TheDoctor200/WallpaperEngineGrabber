@@ -71,7 +71,7 @@ def open_wallpaper_folder(e):  # Accept the event argument
     if wallpaper_path:
         subprocess.Popen(['explorer', wallpaper_path])
     else:
-        printlog("Error: Unable to find the Wallpaper Engine projects folder.")
+        printlog(page, "Error: Unable to find the Wallpaper Engine projects folder.")
 
 def main(page: ft.Page):
     global save_location, output
@@ -120,9 +120,13 @@ def main(page: ft.Page):
         
         dir_option = f"-dir \"{save_location}/{pubfileid}\""
         command = f"DepotdownloaderMod/DepotDownloadermod.exe -app 431960 -pubfile {pubfileid} -verify-all -username {username.value} -password {passwords[username.value]} {dir_option}"
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+        # Set the creationflags to CREATE_NO_WINDOW to hide the console window
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
         for line in process.stdout:
             printlog(page, line.strip())
+        
         process.stdout.close()
         process.wait()
         printlog(page, f"-------------Download finished-----------")
@@ -147,10 +151,6 @@ def main(page: ft.Page):
 
     buttons_row = ft.Row([run_button, manage_button, search_button])
 
-    # Add the stack layout for overlapping text
-    # center_text = ft.Text("Made by The Doctor", size=30, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE)  # Fixed color
-
-    # Use Stack to layer the text over everything else
     page.add(
         ft.Stack(
             controls=[
