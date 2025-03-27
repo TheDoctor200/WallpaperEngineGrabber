@@ -144,7 +144,7 @@ def main(page: ft.Page):
     buttons_row = ft.Row([run_button, manage_button])
 
     # Add the stack layout for overlapping text
-    center_text = ft.Text("Made by The Doctor", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE)
+    # center_text = ft.Text("Made by The Doctor", size=30, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE)  # Fixed color
 
     # Use Stack to layer the text over everything else
     page.add(
@@ -160,10 +160,8 @@ def main(page: ft.Page):
                         ft.Text("Console Output:"), output,
                     ]
                 ),
-                center_text  # Add the overlapping text here
             ]
         )
     )
 
 ft.app(target=main)
-
