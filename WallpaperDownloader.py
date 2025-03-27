@@ -54,10 +54,13 @@ def load_save_location():
 load_save_location()
 
 def printlog(page, text):
-    output.controls.append(ft.Text(text, color=ft.colors.WHITE))
+    """Function to log output into the console and update UI."""
+    # Add the new message to the log
+    output.controls.append(ft.Text(text))  # Append new text control to the output column
+    # If we have more than max_log_lines messages, remove the first (oldest) one
     if len(output.controls) > max_log_lines:
         output.controls.pop(0)
-    page.update()
+    page.update()  # Ensure the UI updates to reflect changes
 
 def open_wallpaper_folder(e):  # Accept the event argument
     """Open the Wallpaper Engine 'myprojects' folder in the file explorer."""
@@ -133,46 +136,20 @@ def main(page: ft.Page):
     def start_thread(e):
         threading.Thread(target=run_commands).start()
 
-    signature = ft.Container(
-        content=ft.Text(
-            "Made by TheDoctor",
-            color=ft.colors.WHITE,
-            weight=ft.FontWeight.BOLD,
-            size=10,
-        ),
-        alignment=ft.alignment.bottom_right,
-        padding=ft.padding.only(right=20, bottom=20),
-        position=ft.RelativeOffset(0.9, 0.95),  # Position relative to the app window
-    )
-
     run_button = ft.ElevatedButton(text="Download", icon= ft.Icons.FILE_DOWNLOAD_OUTLINED, on_click=start_thread)
     select_button = ft.ElevatedButton(text="Select Save Location", icon= ft.Icons.MY_LOCATION, on_click=select_save_location)
     manage_button = ft.ElevatedButton(text="Manage Wallpapers", icon= ft.Icons.LIBRARY_BOOKS_SHARP, on_click=open_wallpaper_folder)  # Added Manage Wallpapers Button
+
     # Placing the buttons side by side
     buttons_row = ft.Row([run_button, manage_button])
 
     page.add(
-        ft.Container(
-            content=ft.Stack(
-                [
-                    ft.Column([
-                        # ...existing code...
-                        ft.Container(
-                            content=ft.Column([
-                                ft.Text("Console Output:", color=ft.colors.WHITE),
-                                output,
-                            ]),
-                            height=350,
-                            width=600,
-                            bgcolor=ft.colors.SURFACE_VARIANT,
-                            border_radius=10,
-                        ),
-                    ]),
-                    signature,  # Add signature at the end of the Stack
-                ],
-            ),
-            width=600,
-            height=600,
-        )
+        ft.Text("Wallpaper Engine Workshop Downloader", size=20, weight=ft.FontWeight.BOLD),
+        ft.Row([ft.Text("Select Account:"), username]),
+        select_button, save_location_text,
+        ft.Text("Enter workshop items (one per line):"), link_input,
+        buttons_row,  # Add the buttons side by side
+        ft.Text("Console Output:"), output
     )
+
 ft.app(target=main)
