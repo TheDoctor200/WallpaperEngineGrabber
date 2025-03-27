@@ -143,13 +143,27 @@ def main(page: ft.Page):
     # Placing the buttons side by side
     buttons_row = ft.Row([run_button, manage_button])
 
+    # Add the stack layout for overlapping text
+    center_text = ft.Text("Made by The Doctor", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE)
+
+    # Use Stack to layer the text over everything else
     page.add(
-        ft.Text("Wallpaper Engine Workshop Downloader", size=20, weight=ft.FontWeight.BOLD),
-        ft.Row([ft.Text("Select Account:"), username]),
-        select_button, save_location_text,
-        ft.Text("Enter workshop items (one per line):"), link_input,
-        buttons_row,  # Add the buttons side by side
-        ft.Text("Console Output:"), output
+        ft.Stack(
+            controls=[
+                ft.Column(
+                    controls=[
+                        ft.Text("Wallpaper Engine Workshop Downloader", size=20, weight=ft.FontWeight.BOLD),
+                        ft.Row([ft.Text("Select Account:"), username]),
+                        select_button, save_location_text,
+                        ft.Text("Enter workshop items (one per line):"), link_input,
+                        buttons_row,  # Add the buttons side by side
+                        ft.Text("Console Output:"), output,
+                    ]
+                ),
+                center_text  # Add the overlapping text here
+            ]
+        )
     )
 
 ft.app(target=main)
+
