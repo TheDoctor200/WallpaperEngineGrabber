@@ -14,6 +14,8 @@ WallpaperEngineGrabber is a tool designed to help you download and manage wallpa
 2. run WallpaperDownloader.py with the [latest Python Version](https://www.python.org/downloads/) (not with IDE!)
 3. Enjoy your favorite wallpapers!
 
+### Requirenment Installation: ```bash pip install -r requirements.txt ```
+
 ## Note
 Original project by [Oureveryday](https://github.com/oureveryday/WallpaperEngineWorkshopDownloader). This project is inspired by and builds upon his work.
 
