@@ -23,5 +23,5 @@ Original project by [Oureveryday](https://github.com/oureveryday/WallpaperEngine
 This project is licensed under the terms of the MIT License.
 
 ## Support me, my hard work and future development:
-Crypto Wallet Adress: 0xfbe3E2337e7bCfC9245f0C2eAeF16597f0Bb2Dc2 (ETH, LTC, BNB)
+Crypto Wallet Adress: 0xfbe3E2337e7bCfC9245f0C2eAeF16597f0Bb2Dc2 (ETH)
 
