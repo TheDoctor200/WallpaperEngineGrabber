@@ -76,10 +76,16 @@ def open_wallpaper_folder(e):  # Accept the event argument
 def main(page: ft.Page):
     global save_location, output
 
+    # Window properties
     page.title = "Wallpaper Engine Workshop Downloader"
+    page.window_title_bar_hidden = False
+    page.window_title_bar_buttons_hidden = False
     page.window_width = 600
     page.window_height = 600
     page.window_icon = "./assets/favicon.ico"
+    
+    # Set window center aligned
+    page.window_center()
 
     # Create a scrollable output field to display log messages
     output = ft.Column(scroll=ft.ScrollMode.ALWAYS, height=300)  # Make the log area bigger
