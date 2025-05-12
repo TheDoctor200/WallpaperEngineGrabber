@@ -84,9 +84,6 @@ def main(page: ft.Page):
     page.window_height = 600
     page.window_icon = "./assets/favicon.ico"
     
-    # Set window center aligned
-    page.window_center()
-
     # Create a scrollable output field to display log messages
     output = ft.Column(scroll=ft.ScrollMode.ALWAYS, height=300)  # Make the log area bigger
     username = ft.Dropdown(options=[ft.dropdown.Option(account) for account in accounts], value=list(accounts.keys())[0])
