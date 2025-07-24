@@ -67,24 +67,28 @@ def load_save_location():
 
 load_save_location()
 
-def printlog(page, text):
-    output.controls.append(ft.Text(text, font_family="Roboto Mono", size=13))
-    if len(output.controls) > max_log_lines:
-        output.controls.pop(0)
-    page.update()
-
 def open_SteamWorkshop(e):
     subprocess.Popen(['explorer', 'https://steamcommunity.com/app/431960/workshop/'])
   
 def open_wallpaper_folder(e, page):
+    # Define output_column and console_text_color as global to ensure they are accessible
+    global output_column, console_text_color
     wallpaper_path = get_default_wallpaper_path()
     if wallpaper_path:
         subprocess.Popen(['explorer', wallpaper_path])
     else:
-        printlog(page, "Error: Unable to find the Wallpaper Engine projects folder.")
+        printlog(page, "Error: Unable to find the Wallpaper Engine projects folder.", output_column, console_text_color)
+
+# Remove printlog from inside main and define it globally, passing output_column and console_text_color as arguments
+
+def printlog(page, text, output_column, console_text_color):
+    output_column.controls.append(ft.Text(text, font_family="Roboto Mono", size=13, color=console_text_color))
+    if len(output_column.controls) > max_log_lines:
+        output_column.controls.pop(0)
+    page.update()
 
 def main(page: ft.Page):
-    global save_location, output
+    global save_location, output, output_column, console_text_color
 
     # --- Theme Mode ---
     theme_mode = load_theme_mode()
@@ -119,11 +123,36 @@ def main(page: ft.Page):
             margin=margin,
         )
 
+    # --- Output Console ---
+    # Set console background color based on theme mode
+    def get_console_bg():
+        return ft.Colors.WHITE if page.theme_mode == ft.ThemeMode.LIGHT else ft.Colors.BLACK
+
+    console_bg = get_console_bg()
+    console_text_color = None  # Use default text color for theme
+
+    output_column = ft.Column(
+        scroll=ft.ScrollMode.ALWAYS,
+        height=180,
+        expand=True,
+    )
+    output = ft.Container(
+        content=output_column,
+        border=ft.border.all(1, ft.Colors.OUTLINE),
+        border_radius=8,
+        padding=7,
+        bgcolor=console_bg,
+        expand=True,
+        alignment=ft.alignment.center,
+    )
+
     # --- Theme Toggle ---
     def on_theme_toggle(e):
         new_mode = "light" if page.theme_mode == ft.ThemeMode.DARK else "dark"
         page.theme_mode = ft.ThemeMode.LIGHT if new_mode == "light" else ft.ThemeMode.DARK
         save_theme_mode(new_mode)
+        # Update console background color after theme change
+        output.bgcolor = get_console_bg()
         page.update()
 
     theme_toggle = ft.Switch(
@@ -133,21 +162,6 @@ def main(page: ft.Page):
         thumb_color=ft.Colors.BLUE,
         track_color=ft.Colors.BLUE_100,
         scale=0.8,
-    )
-
-    # --- Output Console ---
-    output = ft.Container(
-        content=ft.Column(
-            scroll=ft.ScrollMode.ALWAYS,
-            height=180,
-            expand=True,
-        ),
-        border=ft.border.all(1, ft.Colors.OUTLINE),
-        border_radius=8,
-        padding=7,
-        bgcolor=ft.Colors.WHITE if page.theme_mode == ft.ThemeMode.LIGHT else ft.Colors.BLACK87,
-        expand=True,
-        alignment=ft.alignment.center,
     )
 
     # --- UI Controls ---
@@ -188,12 +202,12 @@ def main(page: ft.Page):
                 save_location_text.value = f"Save Location: {save_location}"
                 with open('lastsavelocation.cfg', 'w') as file:
                     file.write(save_location)
-                printlog(page, f"Save location set to: {save_location}")
+                printlog(page, f"Save location set to: {save_location}", output_column, console_text_color)
                 page.update()
             else:
-                printlog(page, f"Invalid directory: '{e.path}' does not contain 'projects/myprojects'.")
+                printlog(page, f"Invalid directory: '{e.path}' does not contain 'projects/myprojects'.", output_column, console_text_color)
         else:
-            printlog(page, "Invalid save location: The selected directory is not valid.")
+            printlog(page, "Invalid save location: The selected directory is not valid.", output_column, console_text_color)
         page.update()
 
     file_picker = ft.FilePicker(on_result=set_save_location)
@@ -203,18 +217,18 @@ def main(page: ft.Page):
         file_picker.get_directory_path()
 
     def run_command(pubfileid):
-        printlog(page, f"----------Downloading {pubfileid}--------")
+        printlog(page, f"----------Downloading {pubfileid}--------", output_column, console_text_color)
         if save_location == "Not set" or not os.path.isdir(save_location):
-            printlog(page, "Error: Save location is not set correctly.")
+            printlog(page, "Error: Save location is not set correctly.", output_column, console_text_color)
             return
         dir_option = f"-dir \"{save_location}/{pubfileid}\""
         command = f"DepotdownloaderMod/DepotDownloadermod.exe -app 431960 -pubfile {pubfileid} -verify-all -username {username.value} -password {passwords[username.value]} {dir_option}"
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
         for line in process.stdout:
-            printlog(page, line.strip())
+            printlog(page, line.strip(), output_column, console_text_color)
         process.stdout.close()
         process.wait()
-        printlog(page, f"-------------Download finished-----------")
+        printlog(page, f"-------------Download finished-----------", output_column, console_text_color)
 
     def run_commands():
         links = link_input.value.splitlines()
@@ -224,14 +238,14 @@ def main(page: ft.Page):
                 if match:
                     run_command(match.group(0))
                 else:
-                    printlog(page, f"Invalid link: {link}")
+                    printlog(page, f"Invalid link: {link}", output_column, console_text_color)
 
     def start_thread(e):
-        threading.Thread(target=run_commands).start()
+        run_commands()
 
     run_button = ft.FilledButton(
         text="Download",
-        icon=ft.icons.FILE_DOWNLOAD_OUTLINED,
+        icon=ft.Icons.FILE_DOWNLOAD_OUTLINED,
         on_click=start_thread,
         style=ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=6),
@@ -242,7 +256,7 @@ def main(page: ft.Page):
 
     select_button = ft.OutlinedButton(
         text="Select Save Location",
-        icon=ft.icons.MY_LOCATION,
+        icon=ft.Icons.MY_LOCATION,
         on_click=select_save_location,
         style=ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=6),
@@ -253,7 +267,7 @@ def main(page: ft.Page):
 
     manage_button = ft.OutlinedButton(
         text="Manage Downloaded Wallpapers",
-        icon=ft.icons.LIBRARY_BOOKS_SHARP,
+        icon=ft.Icons.LIBRARY_BOOKS_SHARP,
         on_click=lambda e: open_wallpaper_folder(e, page),
         style=ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=6),
@@ -264,7 +278,7 @@ def main(page: ft.Page):
 
     search_button = ft.OutlinedButton(
         text="Search for Wallpapers",
-        icon=ft.icons.LIBRARY_BOOKS_SHARP,
+        icon=ft.Icons.LIBRARY_BOOKS_SHARP,
         on_click=open_SteamWorkshop,
         style=ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=6),
