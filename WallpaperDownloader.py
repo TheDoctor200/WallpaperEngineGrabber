@@ -221,8 +221,12 @@ def main(page: ft.Page):
         if save_location == "Not set" or not os.path.isdir(save_location):
             printlog(page, "Error: Save location is not set correctly.", output_column, console_text_color)
             return
+        exe_path = "DepotdownloaderMod/DepotDownloadermod.exe"
+        if not os.path.isfile(exe_path):
+            printlog(page, f"Error: Downloader executable not found at '{exe_path}'.", output_column, console_text_color)
+            return
         dir_option = f"-dir \"{save_location}/{pubfileid}\""
-        command = f"DepotdownloaderMod/DepotDownloadermod.exe -app 431960 -pubfile {pubfileid} -verify-all -username {username.value} -password {passwords[username.value]} {dir_option}"
+        command = f"{exe_path} -app 431960 -pubfile {pubfileid} -verify-all -username {username.value} -password {passwords[username.value]} {dir_option}"
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
         for line in process.stdout:
             printlog(page, line.strip(), output_column, console_text_color)
