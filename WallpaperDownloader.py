@@ -106,7 +106,8 @@ def main(page: ft.Page):
     page.window_height = 850
     page.window_min_width = 600
     page.window_min_height = 600
-    page.window_icon = "./assets/favicon.ico"
+    page.window_icon = os.path.abspath("./assets/favicon.png")  # Ensure absolute path for icon
+    page.icon = os.path.abspath("./assets/favicon.png")  # Set taskbar icon (Flet uses this for general app icon)
     page.padding = 0
     page.spacing = 0
 
