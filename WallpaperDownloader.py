@@ -6,6 +6,7 @@ import re
 import os
 import winreg  # Required for Windows registry access
 import json
+import sys
 
 # Global Variables
 save_location = "Not set"
@@ -98,16 +99,57 @@ def main(page: ft.Page):
         visual_density=ft.VisualDensity.COMFORTABLE,
     )
 
+    # Use sys._MEIPASS for asset paths if running as a bundled app
+    if hasattr(sys, "_MEIPASS"):
+        BASE_DIR = sys._MEIPASS
+    else:
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+    favicon_path = os.path.join(ASSETS_DIR, "favicon.ico")
+    
+    # Fallback paths for favicon
+    favicon_fallback_paths = [
+        os.path.join(ASSETS_DIR, "favicon.png"),
+        os.path.join(BASE_DIR, "favicon.ico"),
+        os.path.join(BASE_DIR, "favicon.png"),
+        os.path.join(os.path.dirname(BASE_DIR), "assets", "favicon.ico"),
+        os.path.join(os.path.dirname(BASE_DIR), "assets", "favicon.png")
+    ]
+
+    # Find the best available icon
+    icon_path = None
+    if os.path.exists(favicon_path):
+        icon_path = favicon_path
+    else:
+        for fallback_path in favicon_fallback_paths:
+            if os.path.exists(fallback_path):
+                icon_path = fallback_path
+                break
+
     # Window properties
     page.title = "Wallpaper Engine Workshop Downloader"
+    page.window_title = "Wallpaper Engine Workshop Downloader"
     page.window_title_bar_hidden = False
     page.window_title_bar_buttons_hidden = False
     page.window_width = 900
     page.window_height = 850
     page.window_min_width = 600
     page.window_min_height = 600
-    page.window_icon = os.path.abspath("./assets/favicon.png")  # Ensure absolute path for icon
-    page.icon = os.path.abspath("./assets/favicon.png")  # Set taskbar icon (Flet uses this for general app icon)
+    page.window_resizable = True
+    page.window_center = True
+    page.window_maximizable = True
+    page.window_always_on_top = False
+    
+    # Set window icon, app icon, and tray icon (if supported)
+    if icon_path:
+        page.window_icon = icon_path
+        page.icon = icon_path
+        try:
+            page.tray_icon = icon_path  # For Flet >=0.14.0, sets Windows tray/taskbar icon
+        except Exception:
+            pass
+    
     page.padding = 0
     page.spacing = 0
 
@@ -154,6 +196,12 @@ def main(page: ft.Page):
         save_theme_mode(new_mode)
         # Update console background color after theme change
         output.bgcolor = get_console_bg()
+        # Update page gradient
+        page.gradient = ft.LinearGradient(
+            begin=ft.alignment.top_left,
+            end=ft.alignment.bottom_right,
+            colors=[ft.Colors.WHITE, ft.Colors.BLUE_100] if page.theme_mode == ft.ThemeMode.LIGHT else [ft.Colors.BLACK, ft.Colors.BLUE_GREY_900],
+        )
         page.update()
 
     theme_toggle = ft.Switch(
@@ -292,20 +340,6 @@ def main(page: ft.Page):
         ),
     )
 
-    # --- Layout ---
-    # Remove card/container backgrounds so the gradient shows through
-    def get_card(content, padding=14, margin=8, bgcolor=None):
-        return ft.Card(
-            content=ft.Container(
-                content=content,
-                padding=padding,
-                bgcolor=None,  # No background, let the page gradient show
-                border_radius=10,
-            ),
-            elevation=3,
-            margin=margin,
-        )
-
     # Set the page background gradient
     page.bgcolor = None
     page.gradient = ft.LinearGradient(
@@ -355,4 +389,5 @@ def main(page: ft.Page):
         ], spacing=0, expand=True),
     )
 
-ft.app(target=main)
+if __name__ == "__main__":
+    ft.app(target=main)
