@@ -48,22 +48,50 @@ def get_default_wallpaper_path():
     """Determine the default Wallpaper Engine projects folder."""
     steam_path = get_steam_path()
     if steam_path:
+        # Use os.path.join to properly handle paths with spaces
         wallpaper_path = os.path.join(steam_path, "steamapps", "common", "wallpaper_engine", "projects", "myprojects")
         if os.path.isdir(wallpaper_path):
             return wallpaper_path
+        # Alternative: try to find the path even if some components have spaces
+        try:
+            # Check if the path exists by testing each component
+            test_path = steam_path
+            for component in ["steamapps", "common", "wallpaper_engine", "projects", "myprojects"]:
+                test_path = os.path.join(test_path, component)
+                if not os.path.exists(test_path):
+                    break
+            if os.path.isdir(test_path):
+                return test_path
+        except Exception:
+            pass
     return None
 
 # Load save location from config file
 def load_save_location():
     global save_location
     try:
-        with open('lastsavelocation.cfg', 'r') as file:
+        with open('lastsavelocation.cfg', 'r', encoding='utf-8') as file:
             target_directory = file.read().strip()
-            if os.path.isdir(target_directory):
-                save_location = target_directory
+            # Handle paths with spaces and validate the structure
+            if target_directory and os.path.isdir(target_directory):
+                # Validate that it contains the required projects/myprojects structure
+                normalized_path = target_directory.replace("\\", "/")
+                if 'projects' in normalized_path and 'myprojects' in normalized_path:
+                    path_parts = normalized_path.split('/')
+                    try:
+                        projects_index = path_parts.index('projects')
+                        myprojects_index = path_parts.index('myprojects')
+                        if myprojects_index > projects_index:
+                            save_location = target_directory
+                        else:
+                            save_location = get_default_wallpaper_path() or "Not set"
+                    except ValueError:
+                        save_location = get_default_wallpaper_path() or "Not set"
+                else:
+                    save_location = get_default_wallpaper_path() or "Not set"
             else:
                 save_location = get_default_wallpaper_path() or "Not set"
-    except FileNotFoundError:
+    except (FileNotFoundError, UnicodeDecodeError, Exception):
         save_location = get_default_wallpaper_path() or "Not set"
 
 load_save_location()
@@ -76,7 +104,11 @@ def open_wallpaper_folder(e, page):
     global output_column, console_text_color
     wallpaper_path = get_default_wallpaper_path()
     if wallpaper_path:
-        subprocess.Popen(['explorer', wallpaper_path])
+        try:
+            # Use shell=True to properly handle paths with spaces in Windows Explorer
+            subprocess.Popen(f'explorer "{wallpaper_path}"', shell=True)
+        except Exception as e:
+            printlog(page, f"Error opening folder: {str(e)}", output_column, console_text_color)
     else:
         printlog(page, "Error: Unable to find the Wallpaper Engine projects folder.", output_column, console_text_color)
 
@@ -246,13 +278,26 @@ def main(page: ft.Page):
     def set_save_location(e: ft.FilePickerResultEvent):
         global save_location
         if e.path and os.path.isdir(e.path):
-            if 'projects' in e.path.replace("\\", "/") and 'myprojects' in e.path.replace("\\", "/"):
-                save_location = e.path
-                save_location_text.value = f"Save Location: {save_location}"
-                with open('lastsavelocation.cfg', 'w') as file:
-                    file.write(save_location)
-                printlog(page, f"Save location set to: {save_location}", output_column, console_text_color)
-                page.update()
+            # Normalize path separators and check if it contains the required structure
+            normalized_path = e.path.replace("\\", "/")
+            if 'projects' in normalized_path and 'myprojects' in normalized_path:
+                # Additional validation: ensure the path structure is correct
+                path_parts = normalized_path.split('/')
+                try:
+                    projects_index = path_parts.index('projects')
+                    myprojects_index = path_parts.index('myprojects')
+                    # Check if myprojects is a subdirectory of projects
+                    if myprojects_index > projects_index:
+                        save_location = e.path
+                        save_location_text.value = f"Save Location: {save_location}"
+                        with open('lastsavelocation.cfg', 'w') as file:
+                            file.write(save_location)
+                        printlog(page, f"Save location set to: {save_location}", output_column, console_text_color)
+                        page.update()
+                    else:
+                        printlog(page, f"Invalid directory structure: 'myprojects' must be a subdirectory of 'projects'.", output_column, console_text_color)
+                except ValueError:
+                    printlog(page, f"Invalid directory: '{e.path}' does not contain the required 'projects/myprojects' structure.", output_column, console_text_color)
             else:
                 printlog(page, f"Invalid directory: '{e.path}' does not contain 'projects/myprojects'.", output_column, console_text_color)
         else:
@@ -274,14 +319,31 @@ def main(page: ft.Page):
         if not os.path.isfile(exe_path):
             printlog(page, f"Error: Downloader executable not found at '{exe_path}'.", output_column, console_text_color)
             return
-        dir_option = f"-dir \"{save_location}/{pubfileid}\""
-        command = f"{exe_path} -app 431960 -pubfile {pubfileid} -verify-all -username {username.value} -password {passwords[username.value]} {dir_option}"
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
-        for line in process.stdout:
-            printlog(page, line.strip(), output_column, console_text_color)
-        process.stdout.close()
-        process.wait()
-        printlog(page, f"-------------Download finished-----------", output_column, console_text_color)
+        
+        # Properly handle paths with spaces by using os.path.join and proper quoting
+        target_dir = os.path.join(save_location, str(pubfileid))
+        dir_option = f"-dir \"{target_dir}\""
+        
+        # Build command as a list to avoid shell parsing issues with spaces
+        command = [
+            exe_path,
+            "-app", "431960",
+            "-pubfile", str(pubfileid),
+            "-verify-all",
+            "-username", username.value,
+            "-password", passwords[username.value],
+            "-dir", target_dir
+        ]
+        
+        try:
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            for line in process.stdout:
+                printlog(page, line.strip(), output_column, console_text_color)
+            process.stdout.close()
+            process.wait()
+            printlog(page, f"-------------Download finished-----------", output_column, console_text_color)
+        except Exception as e:
+            printlog(page, f"Error running download command: {str(e)}", output_column, console_text_color)
 
     def run_commands():
         links = link_input.value.splitlines()
