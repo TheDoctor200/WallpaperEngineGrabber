@@ -21,6 +21,52 @@ def load_theme_mode():
     except Exception:
         return "dark"
 
+def ensure_icon_compatibility(icon_path):
+    """Ensure the icon is compatible with Windows taskbar and app icon requirements."""
+    if not icon_path or not os.path.exists(icon_path):
+        return None
+    
+    # For Windows, .ico files work best for taskbar icons
+    if icon_path.endswith('.ico'):
+        return icon_path
+    
+    # If it's a PNG, we might need to convert it or use it as is
+    # Flet should handle PNG icons, but .ico is more reliable for Windows
+    return icon_path
+
+def create_windows_icon():
+    """Create a Windows-compatible icon file for the application."""
+    try:
+        # Check if we have the required assets
+        assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+        ico_path = os.path.join(assets_dir, "favicon.ico")
+        png_path = os.path.join(assets_dir, "favicon.png")
+        
+        if os.path.exists(ico_path):
+            return ico_path
+        elif os.path.exists(png_path):
+            # Try to convert PNG to ICO if PIL is available
+            try:
+                from PIL import Image
+                img = Image.open(png_path)
+                # Create a proper ICO file with multiple sizes
+                icon_sizes = [(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+                img.save(ico_path, format='ICO', sizes=icon_sizes)
+                print(f"Created ICO file: {ico_path}")
+                return ico_path
+            except ImportError:
+                print("PIL not available, using PNG as fallback")
+                return png_path
+            except Exception as e:
+                print(f"Error converting PNG to ICO: {e}")
+                return png_path
+        else:
+            print("No icon files found in assets directory")
+            return None
+    except Exception as e:
+        print(f"Error creating Windows icon: {e}")
+        return None
+
 def save_theme_mode(theme_mode):
     with open(THEME_CONFIG_FILE, "w") as f:
         json.dump({"theme_mode": theme_mode}, f)
@@ -140,7 +186,7 @@ def main(page: ft.Page):
     ASSETS_DIR = os.path.join(BASE_DIR, "assets")
     favicon_path = os.path.join(ASSETS_DIR, "favicon.ico")
     
-    # Fallback paths for favicon
+    # Fallback paths for favicon - prioritize .ico files for Windows
     favicon_fallback_paths = [
         os.path.join(ASSETS_DIR, "favicon.png"),
         os.path.join(BASE_DIR, "favicon.ico"),
@@ -149,15 +195,32 @@ def main(page: ft.Page):
         os.path.join(os.path.dirname(BASE_DIR), "assets", "favicon.png")
     ]
 
-    # Find the best available icon
+    # Find the best available icon - prioritize .ico files for Windows
     icon_path = None
-    if os.path.exists(favicon_path):
-        icon_path = favicon_path
-    else:
-        for fallback_path in favicon_fallback_paths:
-            if os.path.exists(fallback_path):
-                icon_path = fallback_path
+    
+    # Try to create or find a Windows-compatible icon
+    icon_path = create_windows_icon()
+    
+    # If no icon was created, fall back to the original detection method
+    if not icon_path:
+        # First try .ico files (best for Windows taskbar)
+        ico_paths = [
+            os.path.join(ASSETS_DIR, "favicon.ico"),
+            os.path.join(BASE_DIR, "favicon.ico"),
+            os.path.join(os.path.dirname(BASE_DIR), "assets", "favicon.ico")
+        ]
+        
+        for ico_path in ico_paths:
+            if os.path.exists(ico_path):
+                icon_path = ico_path
                 break
+        
+        # Fallback to PNG if no .ico found
+        if not icon_path:
+            for fallback_path in favicon_fallback_paths:
+                if fallback_path.endswith('.png') and os.path.exists(fallback_path):
+                    icon_path = fallback_path
+                    break
 
     # Window properties
     page.title = "Wallpaper Engine Workshop Downloader"
@@ -175,12 +238,44 @@ def main(page: ft.Page):
     
     # Set window icon, app icon, and tray icon (if supported)
     if icon_path:
-        page.window_icon = icon_path
-        page.icon = icon_path
+        # Ensure icon compatibility for Windows
+        compatible_icon = ensure_icon_compatibility(icon_path)
+        print(f"Setting icon to: {icon_path} (compatible: {compatible_icon})")
+        
+        page.window_icon = compatible_icon
+        page.icon = compatible_icon
+        
+        # Set taskbar icon explicitly for Windows
         try:
-            page.tray_icon = icon_path  # For Flet >=0.14.0, sets Windows tray/taskbar icon
-        except Exception:
-            pass
+            page.tray_icon = compatible_icon  # For Flet >=0.14.0, sets Windows tray/taskbar icon
+        except Exception as e:
+            print(f"Error setting tray icon: {e}")
+        
+        # Additional Windows-specific icon settings for taskbar
+        try:
+            # Set the app icon for the taskbar using Windows API
+            import ctypes
+            myappid = 'wallpaper.engine.workshop.downloader.1.0'  # arbitrary string
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            
+            # Also try to set the icon using the icon path
+            if compatible_icon and compatible_icon.endswith('.ico'):
+                try:
+                    # Load the icon and set it for the process
+                    import win32api
+                    import win32con
+                    import win32gui
+                    win32gui.SetClassLong(win32gui.GetForegroundWindow(), win32con.GCL_HICON, 
+                                        win32api.LoadImage(0, compatible_icon, win32con.IMAGE_ICON, 0, 0, win32con.LR_LOADFROMFILE))
+                except ImportError:
+                    # win32api not available, skip this method
+                    pass
+                except Exception as e:
+                    print(f"Error setting Windows icon: {e}")
+        except Exception as e:
+            print(f"Error setting Windows app ID: {e}")
+    else:
+        print("No icon found!")
     
     page.padding = 0
     page.spacing = 0
@@ -452,4 +547,7 @@ def main(page: ft.Page):
     )
 
 if __name__ == "__main__":
+    # For proper Windows taskbar icon support, build with:
+    # flet build --name "Wallpaper Engine Workshop Downloader" --icon assets/favicon.ico --product-name "Wallpaper Engine Workshop Downloader" --product-version "1.0.0" --company-name "Your Company" --file-description "Wallpaper Engine Workshop Downloader" --copyright "Copyright (c) 2024" --targets windows
+    
     ft.app(target=main)
